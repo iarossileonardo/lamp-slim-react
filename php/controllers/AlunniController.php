@@ -9,7 +9,7 @@ class AlunniController
     $query = "SELECT * FROM alunni";
     $queryParams = $request->getQueryParams();
     if (isset($queryParams['search'])) {
-      $query .= " WHERE nome LIKE '%" . $queryParams['search'] . "%' OR cognome LIKE '%" . $queryParams['search'] . "%'";
+      $query .= " WHERE nome LIKE '%" . $queryParams['search'] . "%' OR cognome LIKE '%" . $queryParams['search'] . "%' OR cf LIKE '" . $queryParams['search'] . "'";
     }
 
     if (isset($queryParams['sortCol']) && isset($queryParams['sort'])) {
@@ -35,7 +35,7 @@ class AlunniController
   public function create(Request $request, Response $response, $args){
     $data = json_decode($request->getBody()->getContents(), true);
     $mysqli_connection = new MySQLi('my_mariadb', 'root', 'ciccio', 'scuola');
-    $raw_query = "INSERT INTO alunni (nome, cognome) VALUES ('$data[nome]', '$data[cognome]');";
+    $raw_query = "INSERT INTO alunni (nome, cognome, cf) VALUES ('$data[nome]', '$data[cognome]', '$data[cf]');";
     $result = $mysqli_connection->query($raw_query);
     if($result && $mysqli_connection->affected_rows > 0){
       $response->getBody()->write(json_encode(array("message"=>"success")));
@@ -48,15 +48,28 @@ class AlunniController
   public function update(Request $request, Response $response, $args){
     $data = json_decode($request->getBody()->getContents(), true);
     $mysqli_connection = new MySQLi('my_mariadb', 'root', 'ciccio', 'scuola');
-    $raw_query = "UPDATE alunni";
+    $raw_query = "UPDATE alunni SET";
+    $prima_aggiunta = true;
     if (isset($data["nome"])) {
-      $raw_query .= " SET nome='$data[nome]'";
+      if (!$prima_aggiunta) {
+        $query .= ", ";
+      }
+      $raw_query .= "nome='$data[nome]'";
+      $prima_aggiunta = false;
     } elseif (isset($data["cognome"])) {
-      $raw_query .= " SET cognome='$data[cognome]'";
-    } elseif ((isset($data["nome"])) && (isset(data["cognome"]))) {
-      $raw_query .= " SET nome='$data[nome]', cognome='$data[cognome]'";
+      if (!$prima_aggiunta) {
+        $query .= ", ";
+      }
+      $raw_query .= "cognome='$data[cognome]'";
+      $prima_aggiunta = false;
+    } elseif ((isset($data["cf"]))) {
+      if (!$prima_aggiunta) {
+        $query .= ", ";
+      }
+      $raw_query .= "cf='$data[cf]'";
+      $prima_aggiunta = true;
     }
-    $raw_query .= " WHERE id='$args[id]';";
+    $raw_query .= " WHERE id=$args[id]";
     $result = $mysqli_connection->query($raw_query);
     if($result && $mysqli_connection->affected_rows > 0){
       $response->getBody()->write(json_encode(array("message"=>"success")));
