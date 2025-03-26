@@ -6,7 +6,17 @@ class AlunniController
 {
   public function index(Request $request, Response $response, $args){
     $mysqli_connection = new MySQLi('my_mariadb', 'root', 'ciccio', 'scuola');
-    $result = $mysqli_connection->query("SELECT * FROM alunni");
+    $query = "SELECT * FROM alunni";
+    $queryParams = $request->getQueryParams();
+    if (isset($queryParams['search'])) {
+      $query .= " WHERE nome LIKE '%" . $queryParams['search'] . "%' OR cognome LIKE '%" . $queryParams['search'] . "%'";
+    }
+
+    if (isset($queryParams['sortCol']) && isset($queryParams['sort'])) {
+      $query .= " ORDER BY " . $queryParams['sortCol'] . " " . $queryParams['sort'];
+    }
+
+    $result = $mysqli_connection->query($query);
     $results = $result->fetch_all(MYSQLI_ASSOC);
 
     $response->getBody()->write(json_encode($results));
